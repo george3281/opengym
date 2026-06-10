@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pandas
+numpy
+joblib
+scikit-learn==1.5.2
+selenium
+webdriver-manager
+openmeteo-requests
+requests-cache
+supabase
+python-dotenv

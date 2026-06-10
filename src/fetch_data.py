@@ -14,21 +14,48 @@ import requests_cache
 from config import URL, SEMESTERS, WEATHER
 from db import get_client
 
+CHROMIUM_BIN = "/usr/bin/chromium"
+CHROMEDRIVER_BIN = "/usr/bin/chromedriver"
 
-def closed(now: datetime) -> bool:
-    hour = now.hour
-    day_of_week = now.weekday()
-    isweekend = day_of_week in (5, 6)  # Saturday or Sunday
-    if isweekend and (hour < 10 or hour > 18):
+
+def _chrome_options() -> webdriver.ChromeOptions:
+    options = webdriver.ChromeOptions()
+    if os.path.exists(CHROMIUM_BIN) or os.environ.get("GITHUB_ACTIONS") == "true":
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+    if os.path.exists(CHROMIUM_BIN):
+        options.binary_location = CHROMIUM_BIN
+    return options
+
+
+def _chrome_service() -> ChromeService:
+    driver_path = os.environ.get("CHROMEDRIVER_PATH", CHROMEDRIVER_BIN)
+    if os.path.exists(driver_path):
+        return ChromeService(driver_path)
+    return ChromeService(ChromeDriverManager().install())
+
+
+def is_closed_at(hour: int, day_of_week: int) -> bool:
+    is_weekend = day_of_week in (5, 6)  # Saturday or Sunday
+    if is_weekend and (hour < 10 or hour > 18):
         return True
-    if not isweekend and (hour < 6 or hour > 22):
+    if not is_weekend and (hour < 6 or hour > 22):
         return True
     return False
 
 
 def save_reading():
     now = datetime.now(ZoneInfo("America/New_York"))
-    if closed(now):
+    if is_closed_at(now.hour, now.weekday()):
+        return None
+
+    semester_progress = fetch_semester_progress(now)
+    if (semester_progress == -1):
+        return None
+
+    occupancy = fetch_occupancy()
+    if occupancy is None:
         return None
 
     code, temp = fetch_weather()
@@ -37,15 +64,19 @@ def save_reading():
         "recorded_at": now.isoformat(),
         "hour": now.hour,
         "day_of_week": now.weekday(),
-        "semester_progress": fetch_semester_progress(now),
+        "semester_progress": semester_progress,
         "weather": code,
         "temperature": temp,
         "occupancy": fetch_occupancy(), 
     }
 
     client = get_client()
-    result = client.table("rec_data").insert(row).execute()
-    return result
+    try:
+        result = client.table("rec_data").insert(row).execute()
+        return result
+    except Exception as e:
+        print(f"Failed to insert row: {e}")
+        return None
 
 def fetch_semester_progress(now: datetime) -> float:
     for semester, dates in SEMESTERS.items():
@@ -102,16 +133,8 @@ def simplify_wmo(wmo_code: int) -> int:
     return WEATHER["Cloudy"]
 
 def fetch_occupancy() -> float:
-    options = webdriver.ChromeOptions()
-    if os.environ.get("GITHUB_ACTIONS") == "true":
-        options.add_argument("--headless=new")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-
-    driver = webdriver.Chrome(
-        service=ChromeService(ChromeDriverManager().install()),
-        options=options,
-    )
+    options = _chrome_options()
+    driver = webdriver.Chrome(service=_chrome_service(), options=options)
     driver.get(URL)
 
     # wait for the element to be present

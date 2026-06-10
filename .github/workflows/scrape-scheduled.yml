@@ -1,0 +1,33 @@
+name: scrape gym data
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: browser-actions/setup-chrome@v1
+
+      - name: Install Python dependencies
+        run: |
+          pip install selenium webdriver-manager supabase python-dotenv \
+            openmeteo-requests requests-cache
+
+      - name: Run scrape
+        working-directory: src
+        run: python fetch_data.py

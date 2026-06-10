@@ -1,0 +1,30 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/dockerfile
+      secrets:
+        - supabase_url
+        - supabase_key
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: opengym-app/Dockerfile
+      args:
+        # Baked in at build time; browser calls localhost, not the Docker service name
+        NEXT_PUBLIC_FASTAPI_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+secrets:
+  supabase_url:
+    environment: SUPABASE_URL
+  supabase_key:
+    environment: SUPABASE_KEY
