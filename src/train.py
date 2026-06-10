@@ -1,7 +1,7 @@
 from query import fetch_training_data
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 import joblib
@@ -20,9 +20,9 @@ def train():
     X = df[features]
     y = df['occupancy']
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    model = GradientBoostingRegressor(n_estimators=100, max_depth=4)
+    model = GradientBoostingRegressor(n_estimators=100, max_depth=4, random_state=42)
     model.fit(X_train, y_train)
     
     mae = mean_absolute_error(y_test, model.predict(X_test))

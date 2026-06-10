@@ -3,5 +3,5 @@
 ``docker compose up --build`` in project root
 Then:
 
-Frontend: ``http://localhost:3000](http://localhost:3000/)``
-Backend: ``http://localhost:8000/docs](http://localhost:8000/docs)``
+Frontend: `http://localhost:3000/`
+Backend: `http://localhost:8000/docs`

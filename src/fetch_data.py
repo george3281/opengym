@@ -67,7 +67,7 @@ def save_reading():
         "semester_progress": semester_progress,
         "weather": code,
         "temperature": temp,
-        "occupancy": fetch_occupancy(), 
+        "occupancy": occupancy,
     }
 
     client = get_client()
