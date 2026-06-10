@@ -1,6 +1,6 @@
 {
-    "name": "OpenGym",
-    "short_name": "OpenGym",
+    "name": "opengym::uconn",
+    "short_name": "opengym",
     "description": "UConn Rec Center occupancy predictions",
     "start_url": "/",
     "display": "standalone",
